@@ -1,0 +1,31 @@
+# -*- coding: utf-8 -*-
+import scrapy
+
+
+class GetotoSpider(scrapy.Spider):
+    name = "getoto"
+    allowed_domains = ["http://www.asiaone.com/lottery/toto"]
+    start_urls = ['http://www.asiaone.com/lottery/toto']
+
+    def parse(self, response):
+        #extracting the draw date
+
+	#extracting the draw serial no.
+        draw_serial = response.xpath('//*[@class="result-show"]/h3/span[2]/text()').re(r'Draw No. (\w+)')
+        latest_draw_serial = draw_serial[0]
+	
+	#extracting the winning numbers
+        count = 0
+        winning_numbers = []
+        for numbers in response.xpath('//*[@class="toto-lottery"]/div[1]/div[3]/span/text()').extract():
+            if count == 6:
+                break
+            else:
+                winning_numbers.append(numbers)
+                count += 1 
+
+        yield {
+	    'drawDrate': response.xpath('//*[@class="date-display-single"]/text()').extract_first(),
+	    'latestDraw': latest_draw_serial,
+	    'winningNumbers': winning_numbers, 
+	}

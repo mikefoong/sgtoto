@@ -1,0 +1,39 @@
+# Spider to get latest toto results from asiaone
+# To-do:
+# 1. Learn to extract from singapore pools directly instead - Singapore Pools
+#    website has some weird css structure. Hence using asiaone but it is not
+#    the source.
+# 2. Design decision on best way to put it in a database (mongodb). Either:
+#    a. Do it here directly from the spider (tightly-coupled)
+#    b. Run it from a python control file and create separate classes to
+#       manage it
+#
+
+import scrapy
+
+
+class GetotoSpider(scrapy.Spider):
+    name = "getoto"
+    allowed_domains = ["http://www.asiaone.com/lottery/toto"]
+    start_urls = ['http://www.asiaone.com/lottery/toto']
+
+    def parse(self, response):
+	#extracting the draw serial no.
+        draw_serial = response.xpath('//*[@class="result-show"]/h3/span[2]/text()').re(r'Draw No. (\w+)')
+        latest_draw_serial = draw_serial[0]
+	
+	#extracting the winning numbers
+        count = 0
+        winning_numbers = []
+        for numbers in response.xpath('//*[@class="toto-lottery"]/div[1]/div[3]/span/text()').extract():
+            if count == 6:
+                break
+            else:
+                winning_numbers.append(numbers)
+                count += 1 
+
+        yield {
+	    'drawDrate': response.xpath('//*[@class="date-display-single"]/text()').extract_first(),
+	    'latestDraw': latest_draw_serial,
+	    'winningNumbers': winning_numbers, 
+	}
